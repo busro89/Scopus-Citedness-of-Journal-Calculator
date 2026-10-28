@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Scopus Citedness & H-index Strategy Calculator</title>
+<style>
+:root{
+  --brand:#006d74;--brand2:#0f766e;--ink:#1f2937;--muted:#667085;--line:#dfe4e8;
+  --soft:#f8fafc;--blue:#1d4ed8;--blueSoft:#eff6ff;--green:#15803d;--greenSoft:#dcfce7;
+  --amber:#b45309;--amberSoft:#fef3c7;--red:#b91c1c;--redSoft:#fee2e2;--orange:#c2410c;--orangeSoft:#fff7ed;
+  --shadow:0 8px 30px rgba(15,23,42,.07)
+}
+*{box-sizing:border-box}
+body{margin:0;background:#f5f7f9;color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.55}
+header{background:linear-gradient(135deg,#006d74,#0f766e 58%,#0b5f91);color:#fff;padding:28px 22px}
+.header-inner{max-width:1250px;margin:auto}
+h1{margin:0;font-size:clamp(25px,4vw,40px);letter-spacing:-.03em}
+header p{margin:7px 0 0;opacity:.92;max-width:950px}
+main{max-width:1250px;margin:22px auto;padding:0 18px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:20px;box-shadow:var(--shadow)}
+.card h2{margin:0 0 6px;font-size:24px}.card h3{margin:0 0 7px;font-size:18px}
+.sub{color:var(--muted);margin:0 0 14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.upload{border:2px dashed #91c9c4;border-radius:15px;padding:18px;background:#f3fbf9;transition:.15s}
+.upload.drag{background:#e6f7f4;border-color:#0f766e}
+.upload strong{display:block;margin-bottom:5px}
+input[type=file]{width:100%;margin-top:10px}
+input[type=number],input[type=text],select{
+  width:100%;margin-top:6px;padding:10px 11px;border:1px solid #d0d5dd;border-radius:9px;background:#fff;font:inherit
+}
+label.field{font-size:13px;font-weight:750;color:#344054}
+.notice{padding:13px 15px;border-radius:12px;margin:12px 0;font-size:14px}
+.notice.blue{background:var(--blueSoft);color:#1e40af;border:1px solid #bfdbfe}
+.notice.amber{background:var(--amberSoft);color:#854d0e;border:1px solid #fde68a}
+.notice.red{background:var(--redSoft);color:#991b1b;border:1px solid #fecaca}
+.notice.green{background:var(--greenSoft);color:#166534;border:1px solid #bbf7d0}
+.badge{display:inline-flex;padding:4px 9px;border-radius:99px;font-size:12px;font-weight:800;background:#f1f5f9;color:#475569}
+.badge.good{background:var(--greenSoft);color:var(--green)}
+.badge.warn{background:var(--amberSoft);color:var(--amber)}
+.badge.bad{background:var(--redSoft);color:var(--red)}
+.kpi{border:1px solid var(--line);border-radius:14px;padding:15px;background:#fff}
+.kpi .label{font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+.kpi .value{font-size:28px;font-weight:900;margin-top:2px;color:var(--brand2)}
+.kpi small{color:var(--muted);font-size:12px}
+.score-box{border:1px solid #8ec9c3;background:#f1fbf9;border-radius:16px;padding:18px;margin-top:17px}
+.score-big{font-size:45px;font-weight:900;color:var(--brand2);line-height:1}
+.rating-box{border-radius:12px;padding:15px;background:#f3f4f6}
+.rating-option{display:flex;align-items:center;gap:9px;padding:6px 3px;font-size:15px}
+.rating-option input{width:18px;height:18px;accent-color:#0f766e}
+.component{border:1px solid var(--line);border-radius:12px;padding:13px;background:#fff}
+.strategy-box{border:1px solid #bfdbfe;background:#f8fbff;border-radius:16px;padding:18px;margin-top:14px}
+.priority-high{background:#dcfce7;color:#166534;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap}
+.priority-med{background:#fef3c7;color:#92400e;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap}
+.priority-long{background:#f1f5f9;color:#475569;font-weight:800;padding:3px 8px;border-radius:99px;white-space:nowrap}
+.metric-inline{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.target-card{border:1px solid var(--line);border-radius:12px;padding:13px;background:#fff}
+.target-card .big{font-size:28px;font-weight:900;color:var(--brand2)}
+.hladder details{background:#fff;border:1px solid var(--line);margin:0;padding:0;border-radius:8px}
+.hladder details summary{padding:8px 10px}
+.hladder details > div{padding:0 10px 10px}
+.component .bar{height:8px;border-radius:99px;background:#e5e7eb;overflow:hidden;margin:8px 0}
+.component .bar span{height:100%;display:block;background:#0f766e;border-radius:99px}
+.component strong{font-size:20px}
+.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;border-collapse:collapse;background:#fff}
+th,td{padding:10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;font-size:13px}
+th{background:#f8fafc;color:#475569}
+tr:last-child td{border-bottom:0}
+.formula{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;background:#fff;border:1px dashed #fdba74;padding:10px 12px;border-radius:10px;font-size:12px;color:#7c2d12;margin:7px 0}
+.method{border-left:5px solid var(--orange);padding:14px 15px;background:var(--orangeSoft);border-radius:10px;margin:12px 0}
+.actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+button{border:0;border-radius:10px;padding:10px 14px;font-weight:800;cursor:pointer;font:inherit}
+button.primary{background:var(--brand);color:#fff}
+button.secondary{background:#fff;border:1px solid #d0d5dd;color:#344054}
+.hidden{display:none!important}
+.file-meta{margin-top:10px;font-size:13px;color:#475569}
+.statusline{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+details{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fafafa}
+details summary{cursor:pointer;font-weight:800}
+footer{text-align:center;color:#64748b;font-size:12px;padding:24px}
+@media(max-width:950px){.grid2,.grid4,.grid5{grid-template-columns:1fr}}
+@media print{header,.actions,.upload input,details{display:none!important}body{background:#fff}.card{box-shadow:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <h1>Scopus Citedness & H-index Strategy Calculator</h1>
+    <p>Unggah CSV <strong>Secondary Documents</strong> dan <strong>View Cited By</strong>. Aplikasi menghitung Total Citations, Citedness Quantity, Citedness Quality, Citedness Recency, lalu mengubah ke <strong>estimasi scoring “Citedness of journal”</strong>: Not cited → Poorly cited → Fairly cited → Well cited → Extremely well cited.</p>
+  </div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>1. Upload data Scopus</h2>
+    <p class="sub">Seluruh pemrosesan dilakukan lokal di browser. Data tidak dikirim ke server.</p>
+    <div class="grid2">
+      <div class="upload" id="dropSecondary">
+        <strong>CSV 1 — Secondary Documents</strong>
+        <span>Daftar artikel jurnal yang dikenali melalui secondary-document matching.</span>
+        <input id="secondaryFile" type="file" accept=".csv,text/csv">
+        <div class="file-meta" id="secondaryMeta">Belum ada file.</div>
+      </div>
+      <div class="upload" id="dropCitedBy">
+        <strong>CSV 2 — View Cited By</strong>
+        <span>Daftar dokumen Scopus yang menyitasi secondary documents terpilih.</span>
+        <input id="citedByFile" type="file" accept=".csv,text/csv">
+        <div class="file-meta" id="citedByMeta">Belum ada file.</div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:16px">
+      <label class="field">Total artikel/item jurnal yang diterbitkan
+        <input id="totalPublished" type="number" min="0" placeholder="Contoh: 97">
+        <small style="font-weight:400;color:var(--muted)">Diperlukan untuk Citedness Quantity. Jika tidak ada di dua CSV, isi satu angka ini.</small>
+      </label>
+      <label class="field">Tahun evaluasi
+        <input id="evaluationYear" type="number" min="1900" max="2100" value="2026">
+        <small style="font-weight:400;color:var(--muted)">Default recency window: tahun evaluasi + 5 tahun sebelumnya.</small>
+      </label>
+    </div>
+
+    <div class="notice amber">
+      <strong>Mengapa masih ada “Total artikel jurnal”?</strong> Secondary Documents pada dasarnya menunjukkan dokumen jurnal yang sudah ditemukan melalui sitasi; artikel yang belum pernah disitasi biasanya tidak muncul. Karena itu denominator Citedness Quantity tidak dapat dipastikan hanya dari dua CSV. Aplikasi tetap cukup memakai dua CSV untuk data sitasi; satu angka total artikel hanya dibutuhkan untuk Quantity.
+    </div>
+  </section>
+
+  <section class="card hidden" id="resultCard">
+    <h2>2. Hasil indikator sitasi</h2>
+    <p class="sub" id="journalDetected">Hasil dihitung otomatis dari data yang diunggah.</p>
+    <div class="grid4">
+      <div class="kpi"><div class="label">Total nr. of citations</div><div class="value" id="totalCitations">—</div><small>Σ citation count Secondary Documents</small></div>
+      <div class="kpi"><div class="label">Citedness Quantity</div><div class="value" id="quantity">—</div><small>Cited docs ÷ total published</small></div>
+      <div class="kpi"><div class="label">Citedness Quality</div><div class="value" id="quality">—</div><small>h-index jurnal</small></div>
+      <div class="kpi"><div class="label">Citedness Recency</div><div class="value" id="recency">—</div><small id="recencyMethod">Estimated 6-year recency</small></div>
+    </div>
+    <div class="statusline">
+      <span class="badge" id="citedDocsBadge">Cited documents: —</span>
+      <span class="badge" id="uniqueCitingBadge">Unique citing documents: —</span>
+      <span class="badge" id="windowBadge">Recency window: —</span>
+      <span class="badge" id="matchBadge">Reference matching: —</span>
+    </div>
+    <div id="warningBox"></div>
+  </section>
+
+  <section class="card hidden" id="scoringCard">
+    <h2>3. Estimated scoring — Citedness of journal</h2>
+    <p class="sub">Menghubungkan empat data sitasi ke pilihan rating yang tampil pada Scopus Title Review Platform.</p>
+
+    <div class="notice blue">
+      Screenshot Scopus yang menjadi acuan menunjukkan <strong>114 citations, Quantity 9%, Quality 4, Recency 36%</strong> dan reviewer memilih <strong>Well cited</strong>. Scopus tidak membuka threshold numerik untuk pilihan tersebut. Karena itu scoring di bawah adalah <strong>model estimasi yang transparan dan dapat diaudit</strong>, bukan formula resmi Scopus.
+    </div>
+
+    <div class="grid2">
+      <div class="score-box">
+        <div style="font-size:12px;font-weight:850;color:var(--muted);text-transform:uppercase">Estimated citedness score</div>
+        <div class="score-big" id="citednessScore">—</div>
+        <div id="citednessRatingBadge" class="badge warn" style="margin-top:8px">Incomplete</div>
+        <p id="scoreInterpretation" style="margin-bottom:0">Lengkapi data untuk menghasilkan scoring.</p>
+      </div>
+
+      <div class="rating-box">
+        <strong>Citedness of journal</strong>
+        <label class="rating-option"><input type="radio" name="ratingDisplay" disabled><span>Not cited</span></label>
+        <label class="rating-option"><input type="radio" name="ratingDisplay" disabled><span>Poorly cited</span></label>
+        <label class="rating-option"><input type="radio" name="ratingDisplay" disabled><span>Fairly cited</span></label>
+        <label class="rating-option"><input type="radio" name="ratingDisplay" disabled><span>Well cited</span></label>
+        <label class="rating-option"><input type="radio" name="ratingDisplay" disabled><span>Extremely well cited</span></label>
+      </div>
+    </div>
+
+    <h3 style="margin-top:20px">Komponen scoring</h3>
+    <div class="grid4">
+      <div class="component">
+        <span class="badge">25%</span><br>
+        <strong id="scoreTotal">—</strong><span>/100</span>
+        <div class="bar"><span id="barTotal" style="width:0"></span></div>
+        <small>Total citations component</small>
+      </div>
+      <div class="component">
+        <span class="badge">25%</span><br>
+        <strong id="scoreQuantity">—</strong><span>/100</span>
+        <div class="bar"><span id="barQuantity" style="width:0"></span></div>
+        <small>Quantity component</small>
+      </div>
+      <div class="component">
+        <span class="badge">25%</span><br>
+        <strong id="scoreQuality">—</strong><span>/100</span>
+        <div class="bar"><span id="barQuality" style="width:0"></span></div>
+        <small>Quality / h-index component</small>
+      </div>
+      <div class="component">
+        <span class="badge">25%</span><br>
+        <strong id="scoreRecency">—</strong><span>/100</span>
+        <div class="bar"><span id="barRecency" style="width:0"></span></div>
+        <small>Recency component</small>
+      </div>
+    </div>
+
+    <div class="method">
+      <h3>Default model estimasi</h3>
+      <div class="formula">Total component = min(100, Total Citations ÷ 100 × 100)</div>
+      <div class="formula">Quantity component = min(100, Citedness Quantity ÷ 25% × 100)</div>
+      <div class="formula">Quality component = min(100, h-index ÷ 5 × 100)</div>
+      <div class="formula">Recency component = Citedness Recency (%)</div>
+      <div class="formula">Estimated citedness score = 25%×Total + 25%×Quantity + 25%×Quality + 25%×Recency</div>
+      <p><strong>Estimated rating:</strong> 0 citations = Not cited; score &lt;40 = Poorly cited; 40–59.99 = Fairly cited; 60–84.99 = Well cited; ≥85 = Extremely well cited.</p>
+    </div>
+
+    <div class="notice green" id="calibrationBox">
+      <strong>Calibration check:</strong> contoh screenshot 114 citations + 9% + h-index 4 + 36% menghasilkan skor estimasi 63.0 → <strong>Well cited</strong>, konsisten dengan pilihan reviewer pada screenshot.
+    </div>
+
+    <details>
+      <summary>Advanced — ubah anchor dan bobot scoring</summary>
+      <div class="grid4" style="margin-top:12px">
+        <label class="field">Anchor total citations = 100 points<input id="anchorTotal" type="number" min="1" value="100"></label>
+        <label class="field">Anchor Quantity (%) = 100 points<input id="anchorQuantity" type="number" min="0.01" value="25"></label>
+        <label class="field">Anchor h-index = 100 points<input id="anchorQuality" type="number" min="0.01" value="5"></label>
+        <label class="field">Extremely well cited threshold<input id="thresholdExtreme" type="number" min="0" max="100" value="85"></label>
+      </div>
+      <div class="grid4" style="margin-top:12px">
+        <label class="field">Weight Total (%)<input id="weightTotal" type="number" min="0" value="25"></label>
+        <label class="field">Weight Quantity (%)<input id="weightQuantity" type="number" min="0" value="25"></label>
+        <label class="field">Weight Quality (%)<input id="weightQuality" type="number" min="0" value="25"></label>
+        <label class="field">Weight Recency (%)<input id="weightRecency" type="number" min="0" value="25"></label>
+      </div>
+      <p class="sub">Bobot otomatis dinormalisasi terhadap total bobot yang diisi. Threshold Poor/Fair/Well tetap 40 dan 60; threshold Extreme dapat diubah.</p>
+    </details>
+
+    <div class="notice amber">
+      <strong>Journal Standing = 35% dari overall score</strong> pada screenshot 2023 yang diberikan. Namun Journal Standing terdiri dari <strong>Citedness of journal</strong> dan <strong>Editor standing</strong>. Screenshot tidak mengungkap bobot internal di antara keduanya, sehingga aplikasi ini <strong>tidak</strong> mengklaim bahwa citedness sendiri bernilai 35%.
+    </div>
+  </section>
+
+  <section class="card hidden" id="detailsCard">
+    <h2>4. Rincian perhitungan</h2>
+    <div class="grid2">
+      <div>
+        <h3>Distribusi citation count</h3>
+        <div class="table-wrap"><table><thead><tr><th>Citations/article</th><th>Jumlah artikel</th><th>Kontribusi sitasi</th></tr></thead><tbody id="citationDistribution"></tbody></table></div>
+      </div>
+      <div>
+        <h3>Distribusi citing documents per tahun</h3>
+        <div class="table-wrap"><table><thead><tr><th>Tahun</th><th>Unique citing docs</th><th>Dalam recency window?</th></tr></thead><tbody id="yearDistribution"></tbody></table></div>
+      </div>
+    </div>
+    <h3 style="margin-top:18px">Top cited Secondary Documents</h3>
+    <div class="table-wrap"><table><thead><tr><th>#</th><th>Document title</th><th>Year</th><th>Citations</th></tr></thead><tbody id="topCited"></tbody></table></div>
+  </section>
+
+  <section class="card hidden" id="hStrategyCard">
+    <h2>5. Strategi Peningkatan Citedness Quality / h-index</h2>
+    <p class="sub">Aplikasi mengurutkan target h-index dari level berikutnya sampai batas tertinggi yang dapat dihitung menggunakan Secondary Documents yang tersedia.</p>
+
+    <div class="notice blue">
+      <strong>Prinsip penting:</strong> h-index tidak naik hanya karena satu artikel sangat banyak disitasi. Untuk mencapai h-index <em>h</em>, sedikitnya <em>h</em> artikel harus masing-masing memiliki ≥ <em>h</em> sitasi. Karena itu strategi paling efisien adalah membantu artikel yang paling dekat dengan ambang target memperoleh visibilitas dan sitasi <strong>secara wajar dan etis</strong>.
+    </div>
+
+    <div class="grid4">
+      <div class="target-card"><div class="label">Current h-index</div><div class="big" id="strategyCurrentH">—</div><small>Berdasarkan CSV Secondary Documents</small></div>
+      <div class="target-card"><div class="label">Next target</div><div class="big" id="strategyNextH">—</div><small>Target paling dekat</small></div>
+      <div class="target-card"><div class="label">Min. citations needed</div><div class="big" id="strategyNextNeed">—</div><small>Tambahan minimum dari kondisi sekarang</small></div>
+      <div class="target-card"><div class="label">Known-data ceiling</div><div class="big" id="strategyCeiling">—</div><small>Maksimum teoritis dari cited documents yang diketahui</small></div>
+    </div>
+
+    <div class="strategy-box">
+      <h3>Prioritas artikel untuk target h-index berikutnya</h3>
+      <p class="sub">Artikel diurutkan berdasarkan kebutuhan sitasi paling sedikit untuk melewati target berikutnya.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Prioritas</th><th>Article</th><th>Current citations</th><th>Target</th><th>Additional citations needed</th><th>Action priority</th></tr></thead>
+          <tbody id="nextHTargetTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <h3 style="margin-top:20px">H-index target ladder</h3>
+    <p class="sub">Setiap baris menunjukkan minimum tambahan sitasi yang diperlukan <strong>dari kondisi saat ini</strong>, bukan dari target sebelumnya.</p>
+    <div class="table-wrap hladder">
+      <table>
+        <thead>
+          <tr>
+            <th>Target h-index</th>
+            <th>Minimum extra citations</th>
+            <th>Marginal citations vs prior target</th>
+            <th>Articles needing uplift</th>
+            <th>Effort</th>
+            <th>Article-level plan</th>
+          </tr>
+        </thead>
+        <tbody id="hLadderBody"></tbody>
+      </table>
+    </div>
+
+    <div class="method">
+      <h3>Cara aplikasi menghitung kebutuhan sitasi</h3>
+      <div class="formula">Untuk target H = t: pilih t artikel dengan citation count tertinggi, lalu hitung Σ max(0, t − citations_i)</div>
+      <p>Rumus tersebut memberikan <strong>jumlah tambahan sitasi minimum secara matematis</strong> agar target h-index tercapai dari distribusi sitasi saat ini.</p>
+      <p><strong>Contoh:</strong> citation counts 5, 4, 4, 3, ... memiliki h-index 3. Untuk target h=4, empat artikel teratas harus masing-masing ≥4. Hanya artikel ke-4 yang masih 3, sehingga kebutuhan minimum = <strong>1 sitasi tambahan</strong>.</p>
+    </div>
+
+    <div class="notice amber">
+      <strong>Batas perhitungan:</strong> “Known-data ceiling” adalah jumlah cited documents yang tersedia pada Secondary Documents. Secara teoritis jurnal dapat mencapai h-index lebih tinggi jika artikel yang saat ini belum disitasi juga mulai memperoleh sitasi. Karena judul artikel yang belum disitasi tidak ada di CSV Secondary Documents, aplikasi tidak membuat rekomendasi artikel-spesifik di luar batas data tersebut.
+    </div>
+
+    <div class="strategy-box">
+      <h3>Strategi peningkatan yang disarankan</h3>
+      <div id="strategyRecommendations"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>6. Pengertian dan cara hitung</h2>
+    <div class="method">
+      <h3>Total nr. of citations</h3>
+      <p>Total seluruh sitasi yang teridentifikasi terhadap artikel jurnal.</p>
+      <div class="formula">Total Citations = Σ citation count setiap cited article</div>
+    </div>
+    <div class="method">
+      <h3>Citedness Quantity</h3>
+      <p>Mengukur <strong>breadth/keluasan</strong>: persentase artikel jurnal yang sudah pernah disitasi minimal satu kali.</p>
+      <div class="formula">Quantity = cited documents ÷ total published items × 100%</div>
+    </div>
+    <div class="method">
+      <h3>Citedness Quality</h3>
+      <p>Mengukur <strong>depth/kedalaman</strong> melalui h-index jurnal. h-index = 4 berarti sedikitnya empat artikel masing-masing memiliki empat sitasi atau lebih.</p>
+      <div class="formula">h = nilai maksimum sehingga ≥ h artikel masing-masing memiliki ≥ h citations</div>
+    </div>
+    <div class="method">
+      <h3>Citedness Recency</h3>
+      <p>Mengukur keterkinian aktivitas sitasi. Aplikasi menggunakan estimasi window enam tahun inklusif: tahun evaluasi dan lima tahun sebelumnya. Jika matching References cukup baik, aplikasi memakai citation events; jika tidak, fallback ke unique citing documents.</p>
+      <div class="formula">Estimated Recency = recent citation activity ÷ all available citation activity × 100%</div>
+      <p><strong>Catatan:</strong> formula internal Scopus untuk Recency tidak dipublikasikan dalam bahan yang tersedia, sehingga hasil selalu diberi label estimasi.</p>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>7. Export hasil</h2>
+    <div class="actions">
+      <button class="primary" onclick="window.print()">Print / Save PDF</button>
+      <button class="secondary" onclick="downloadSummary()">Download result CSV</button>
+      <button class="secondary" onclick="resetApp()">Reset</button>
+    </div>
+  </section>
+</main>
+<footer>Standalone HTML • bukan alat resmi Scopus/Elsevier • scoring citedness adalah model estimasi transparan yang dikalibrasi terhadap contoh screenshot yang diberikan</footer>
+
+<script>
+let secondaryData=null,citedByData=null,lastResult=null;
+
+function normalizeHeader(s){return String(s||"").replace(/^\uFEFF/,"").trim().toLowerCase().replace(/\s+/g," ")}
+function detectDelimiter(text){
+  const first=(text.split(/\r?\n/).find(x=>x.trim())||"");let best=",",bestCount=-1;
+  for(const d of [",",";","\t"]){let count=0,q=false;for(let i=0;i<first.length;i++){if(first[i]==='"')q=!q;else if(first[i]===d&&!q)count++}if(count>bestCount){best=d;bestCount=count}}
+  return best;
+}
+function parseCSV(text){
+  text=String(text||"").replace(/^\uFEFF/,"");const delim=detectDelimiter(text);const rows=[];let row=[],field="",q=false;
+  for(let i=0;i<text.length;i++){const ch=text[i],n=text[i+1];
+    if(ch==='"'){if(q&&n==='"'){field+='"';i++}else q=!q}
+    else if(ch===delim&&!q){row.push(field);field=""}
+    else if((ch==="\n"||ch==="\r")&&!q){if(ch==="\r"&&n==="\n")i++;row.push(field);field="";if(row.some(x=>String(x).trim()!==""))rows.push(row);row=[]}
+    else field+=ch
+  }
+  if(field!==""||row.length){row.push(field);if(row.some(x=>String(x).trim()!==""))rows.push(row)}
+  if(!rows.length)return{headers:[],rows:[],delimiter:delim};
+  const headers=rows[0].map(x=>String(x).trim());const data=rows.slice(1).map(r=>{const o={};headers.forEach((h,i)=>o[h]=r[i]??"");return o});
+  return{headers,rows:data,delimiter:delim}
+}
+function findColumn(headers,patterns){const norm=headers.map(normalizeHeader);for(const p of patterns){const i=norm.findIndex(h=>p.test(h));if(i>=0)return headers[i]}return null}
+function parseNum(v){const n=Number(String(v??"").trim().replace(/,/g,""));return Number.isFinite(n)?n:0}
+function normalizeText(s){try{return String(s||"").toLowerCase().normalize("NFD").replace(/\p{Diacritic}/gu,"").replace(/https?:\/\/\S+/g," ").replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim()}catch(e){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim()}}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]))}
+function hIndex(counts){const a=counts.filter(x=>x>=0).sort((a,b)=>b-a);let h=0;for(let i=0;i<a.length;i++){if(a[i]>=i+1)h=i+1;else break}return h}
+function uniqueRows(rows,cols){
+  const seen=new Set(),out=[];rows.forEach(r=>{const key=(cols.eid&&r[cols.eid])||(cols.doi&&r[cols.doi])||(cols.title&&r[cols.title])||JSON.stringify(r);const n=normalizeText(key);if(!seen.has(n)){seen.add(n);out.push(r)}});return out
+}
+function analyzeSecondary(p){
+  const H=p.headers,cols={title:findColumn(H,[/^title$/,/document title/]),year:findColumn(H,[/^year$/,/publication year/]),cited:findColumn(H,[/^cited by$/,/^citations?$/,/citation count/]),source:findColumn(H,[/^source title$/,/source/]),doi:findColumn(H,[/^doi$/]),eid:findColumn(H,[/^eid$/])};
+  const docs=p.rows.map(r=>({raw:r,title:cols.title?r[cols.title]:"",year:cols.year?parseNum(r[cols.year]):0,cited:cols.cited?parseNum(r[cols.cited]):0,source:cols.source?r[cols.source]:"",doi:cols.doi?r[cols.doi]:""})).filter(x=>x.title||x.cited||x.year);
+  return{cols,docs}
+}
+function analyzeCitedBy(p){
+  const H=p.headers,cols={title:findColumn(H,[/^title$/,/document title/]),year:findColumn(H,[/^year$/,/publication year/]),refs:findColumn(H,[/^references$/,/cited references/]),doi:findColumn(H,[/^doi$/]),eid:findColumn(H,[/^eid$/]),source:findColumn(H,[/^source title$/,/source/])};
+  return{cols,rows:uniqueRows(p.rows,cols)}
+}
+function matchCitationEvents(sec,cb,evalYear){
+  if(!cb.cols.refs)return{usable:false,matchedEvents:0,recentEvents:0,coverage:0};
+  const ids=sec.docs.map(d=>({title:normalizeText(d.title),doi:normalizeText(d.doi).replace(/^doi /,"")})).filter(x=>x.title||x.doi);
+  let matched=0,recent=0;const start=evalYear-5;
+  cb.rows.forEach(r=>{const refs=normalizeText(r[cb.cols.refs]||"");const y=cb.cols.year?parseNum(r[cb.cols.year]):0;let local=0;
+    ids.forEach(id=>{let ok=false;if(id.doi&&id.doi.length>6&&refs.includes(id.doi))ok=true;else if(id.title&&id.title.length>24&&refs.includes(id.title))ok=true;if(ok)local++});
+    matched+=local;if(y>=start&&y<=evalYear)recent+=local
+  });
+  const total=sec.docs.reduce((s,d)=>s+d.cited,0);return{usable:matched>0,matchedEvents:matched,recentEvents:recent,coverage:total>0?matched/total:0}
+}
+
+function citednessScoreModel(total,quantity,quality,recency){
+  if(total===null||quality===null||recency===null)return null;
+  if(total===0)return{score:0,rating:"Not cited",components:{total:0,quantity:quantity===null?null:0,quality:0,recency:recency}};
+  if(quantity===null)return null;
+
+  const aT=Math.max(1,Number(document.getElementById("anchorTotal").value||100));
+  const aQ=Math.max(.01,Number(document.getElementById("anchorQuantity").value||25));
+  const aH=Math.max(.01,Number(document.getElementById("anchorQuality").value||5));
+  const wt=Math.max(0,Number(document.getElementById("weightTotal").value||25));
+  const wq=Math.max(0,Number(document.getElementById("weightQuantity").value||25));
+  const wh=Math.max(0,Number(document.getElementById("weightQuality").value||25));
+  const wr=Math.max(0,Number(document.getElementById("weightRecency").value||25));
+  const wsum=wt+wq+wh+wr||100;
+
+  const sT=Math.min(100,total/aT*100);
+  const sQ=Math.min(100,quantity/aQ*100);
+  const sH=Math.min(100,quality/aH*100);
+  const sR=Math.max(0,Math.min(100,recency));
+  const score=(sT*wt+sQ*wq+sH*wh+sR*wr)/wsum;
+  const extreme=Math.max(60,Math.min(100,Number(document.getElementById("thresholdExtreme").value||85)));
+
+  let rating="Poorly cited";
+  if(score>=extreme)rating="Extremely well cited";
+  else if(score>=60)rating="Well cited";
+  else if(score>=40)rating="Fairly cited";
+  return{score,rating,components:{total:sT,quantity:sQ,quality:sH,recency:sR}}
+}
+
+function updateScoreUI(model){
+  const ids=["Not cited","Poorly cited","Fairly cited","Well cited","Extremely well cited"];
+  document.querySelectorAll('input[name="ratingDisplay"]').forEach((el,i)=>el.checked=!!model&&ids[i]===model.rating);
+  const scoreEl=document.getElementById("citednessScore"),badge=document.getElementById("citednessRatingBadge");
+  if(!model){scoreEl.textContent="—";badge.textContent="Incomplete";badge.className="badge warn";return}
+  scoreEl.textContent=model.score.toFixed(1)+"/100";badge.textContent=model.rating;
+  badge.className="badge "+(model.rating==="Extremely well cited"||model.rating==="Well cited"?"good":model.rating==="Not cited"||model.rating==="Poorly cited"?"bad":"warn");
+  document.getElementById("scoreInterpretation").innerHTML=`Estimated rating: <strong>${model.rating}</strong>. Skor ini adalah model self-assessment, bukan threshold resmi Scopus.`;
+  for(const [key,id,bar] of [["total","scoreTotal","barTotal"],["quantity","scoreQuantity","barQuantity"],["quality","scoreQuality","barQuality"],["recency","scoreRecency","barRecency"]]){
+    const v=model.components[key];document.getElementById(id).textContent=v===null?"—":v.toFixed(1);document.getElementById(bar).style.width=(v===null?0:v)+"%"
+  }
+}
+
+
+function hIndexTargetPlan(docs, target){
+  const sorted=[...docs]
+    .filter(d=>Number.isFinite(d.cited))
+    .sort((a,b)=>b.cited-a.cited || String(a.title).localeCompare(String(b.title)));
+
+  const chosen=sorted.slice(0,target);
+  if(chosen.length<target) return null;
+
+  const articles=chosen.map((d,i)=>{
+    const gap=Math.max(0,target-d.cited);
+    return {
+      rank:i+1,
+      title:d.title||"(no title)",
+      year:d.year||"",
+      current:d.cited,
+      target,
+      gap
+    };
+  });
+  const totalExtra=articles.reduce((s,a)=>s+a.gap,0);
+  const uplift=articles.filter(a=>a.gap>0).length;
+  return {target,totalExtra,uplift,articles};
+}
+
+function effortLabel(extra, target){
+  if(extra===0) return ["Already achieved","priority-high"];
+  const ratio=extra/Math.max(1,target);
+  if(extra<=2 || ratio<=0.5) return ["Very efficient","priority-high"];
+  if(extra<=10 || ratio<=2) return ["Moderate","priority-med"];
+  return ["Long-term","priority-long"];
+}
+
+function priorityLabel(gap){
+  if(gap<=1) return ["Immediate","priority-high"];
+  if(gap<=3) return ["High","priority-high"];
+  if(gap<=6) return ["Medium","priority-med"];
+  return ["Long-term","priority-long"];
+}
+
+function renderHIndexStrategy(sec, currentH){
+  const card=document.getElementById("hStrategyCard");
+  if(!card) return;
+  card.classList.remove("hidden");
+
+  const knownCited=sec.docs.filter(d=>d.cited>0).sort((a,b)=>b.cited-a.cited);
+  const ceiling=knownCited.length;
+  const nextH=Math.min(currentH+1,ceiling);
+
+  document.getElementById("strategyCurrentH").textContent=currentH;
+  document.getElementById("strategyCeiling").textContent=ceiling || "—";
+
+  const nextPlan = nextH>currentH ? hIndexTargetPlan(knownCited,nextH) : null;
+  document.getElementById("strategyNextH").textContent=nextPlan?nextH:"—";
+  document.getElementById("strategyNextNeed").textContent=nextPlan?nextPlan.totalExtra:"—";
+
+  const nextTable=document.getElementById("nextHTargetTable");
+  if(nextPlan){
+    const actionable=nextPlan.articles.filter(a=>a.gap>0).sort((a,b)=>a.gap-b.gap || b.current-a.current);
+    nextTable.innerHTML=actionable.length?actionable.map((a,i)=>{
+      const [label,cls]=priorityLabel(a.gap);
+      return `<tr>
+        <td>${i+1}</td>
+        <td><strong>${esc(a.title)}</strong>${a.year?`<br><small>${a.year}</small>`:""}</td>
+        <td>${a.current}</td>
+        <td>${a.target}</td>
+        <td><strong>+${a.gap}</strong></td>
+        <td><span class="${cls}">${label}</span></td>
+      </tr>`;
+    }).join(""):`<tr><td colspan="6">Target ${nextH} sudah tercapai.</td></tr>`;
+  }else{
+    nextTable.innerHTML=`<tr><td colspan="6">Tidak ada target berikutnya dalam batas Secondary Documents yang diketahui.</td></tr>`;
+  }
+
+  // Build complete ladder from current H+1 to known cited-doc ceiling.
+  const tbody=document.getElementById("hLadderBody");
+  let priorExtra=0;
+  const rows=[];
+  for(let t=currentH+1;t<=ceiling;t++){
+    const plan=hIndexTargetPlan(knownCited,t);
+    if(!plan) continue;
+    const marginal=plan.totalExtra-priorExtra;
+    const [effort,effortClass]=effortLabel(plan.totalExtra,t);
+    const planRows=plan.articles
+      .filter(a=>a.gap>0)
+      .sort((a,b)=>a.gap-b.gap || b.current-a.current)
+      .map(a=>`<tr><td>${esc(a.title)}</td><td>${a.current}</td><td>${a.target}</td><td><strong>+${a.gap}</strong></td></tr>`).join("");
+
+    rows.push(`<tr>
+      <td><strong>H = ${t}</strong></td>
+      <td><strong>${plan.totalExtra}</strong></td>
+      <td>+${marginal}</td>
+      <td>${plan.uplift}</td>
+      <td><span class="${effortClass}">${effort}</span></td>
+      <td>
+        <details>
+          <summary>${plan.uplift} article${plan.uplift===1?"":"s"} need additional citations</summary>
+          <div>
+            <table>
+              <thead><tr><th>Article</th><th>Current</th><th>Target</th><th>Need</th></tr></thead>
+              <tbody>${planRows || `<tr><td colspan="4">No uplift needed.</td></tr>`}</tbody>
+            </table>
+          </div>
+        </details>
+      </td>
+    </tr>`);
+    priorExtra=plan.totalExtra;
+  }
+  tbody.innerHTML=rows.join("") || `<tr><td colspan="6">No higher target can be calculated from the current known cited documents.</td></tr>`;
+
+  // Strategy narrative: next 3 targets.
+  const rec=document.getElementById("strategyRecommendations");
+  const plans=[];
+  for(let t=currentH+1;t<=Math.min(ceiling,currentH+3);t++){
+    const p=hIndexTargetPlan(knownCited,t); if(p)plans.push(p);
+  }
+  let text=[];
+  if(nextPlan){
+    const a=nextPlan.articles.filter(x=>x.gap>0).sort((x,y)=>x.gap-y.gap);
+    if(a.length===1 && a[0].gap===1){
+      text.push(`<p><strong>Quick win:</strong> h-index dapat naik dari <strong>${currentH} menjadi ${nextH}</strong> jika artikel <em>${esc(a[0].title)}</em> memperoleh <strong>1 sitasi tambahan</strong>.</p>`);
+    }else{
+      text.push(`<p><strong>Target terdekat:</strong> H=${nextH} membutuhkan minimum <strong>${nextPlan.totalExtra} sitasi tambahan</strong> yang tersebar pada <strong>${nextPlan.uplift} artikel</strong>.</p>`);
+    }
+  }
+  if(plans.length>1){
+    text.push(`<p><strong>Jangan hanya mendorong artikel yang sudah paling tinggi sitasinya.</strong> Untuk menaikkan h-index, prioritas sebaiknya diberikan kepada artikel yang berada tepat di bawah threshold target karena setiap sitasi pada artikel tersebut lebih efisien secara h-index.</p>`);
+  }
+  text.push(`<p><strong>Strategi etis yang disarankan:</strong> perkuat metadata/DOI dan judul-abstrak berbahasa Inggris, pastikan artikel mudah ditemukan dan terindeks, promosikan artikel relevan melalui jejaring akademik dan kanal institusi, dorong author outreach kepada komunitas riset yang sesuai, buat thematic collections atau review/synthesis yang secara ilmiah menghubungkan artikel-artikel jurnal, dan tingkatkan kualitas serta relevansi artikel baru.</p>`);
+  text.push(`<p><strong>Hindari manipulasi sitasi:</strong> jangan menggunakan coercive citation, citation cartels, atau self-citation yang tidak relevan. Tujuan strategi ini adalah meningkatkan <em>discoverability</em> dan penggunaan ilmiah yang sah.</p>`);
+  rec.innerHTML=text.join("");
+}
+
+function calculate(){
+  if(!secondaryData||!citedByData)return;
+  const sec=analyzeSecondary(secondaryData),cb=analyzeCitedBy(citedByData);
+  const published=Math.max(0,Number(document.getElementById("totalPublished").value||0));
+  const evalYear=Math.trunc(Number(document.getElementById("evaluationYear").value||new Date().getFullYear())),start=evalYear-5;
+  const citationCounts=sec.docs.map(d=>d.cited).filter(x=>x>=0),total=citationCounts.reduce((a,b)=>a+b,0);
+  const citedDocs=sec.docs.filter(d=>d.cited>0).length||sec.docs.length,quantity=published>0?citedDocs/published*100:null,quality=hIndex(citationCounts);
+  const years=cb.rows.map(r=>cb.cols.year?parseNum(r[cb.cols.year]):0).filter(y=>y>0),recentUnique=years.filter(y=>y>=start&&y<=evalYear).length;
+  const uniqueRecency=years.length?recentUnique/years.length*100:null,eventMatch=matchCitationEvents(sec,cb,evalYear);
+  let recency=uniqueRecency,basis="unique citing documents";
+  if(eventMatch.usable&&eventMatch.coverage>=.80){recency=eventMatch.matchedEvents?eventMatch.recentEvents/eventMatch.matchedEvents*100:null;basis="matched citation events"}
+
+  const sources={};sec.docs.forEach(d=>{if(d.source)sources[d.source]=(sources[d.source]||0)+1});const detected=Object.entries(sources).sort((a,b)=>b[1]-a[1])[0]?.[0]||"";
+  const model=citednessScoreModel(total,quantity,quality,recency);
+  lastResult={sec,cb,published,evalYear,start,total,citedDocs,quantity,quality,years,recency,basis,eventMatch,detected,model};
+
+  document.getElementById("resultCard").classList.remove("hidden");document.getElementById("scoringCard").classList.remove("hidden");document.getElementById("detailsCard").classList.remove("hidden");
+  document.getElementById("journalDetected").textContent=detected?`Source terdeteksi: ${detected}`:"Source title tidak terdeteksi.";
+  document.getElementById("totalCitations").textContent=total.toLocaleString();document.getElementById("quantity").textContent=quantity===null?"N/A":quantity.toFixed(2)+"%";
+  document.getElementById("quality").textContent=quality;document.getElementById("recency").textContent=recency===null?"N/A":recency.toFixed(2)+"%";
+  renderHIndexStrategy(sec,quality);
+  document.getElementById("recencyMethod").textContent=`Estimated, basis: ${basis}`;
+  document.getElementById("citedDocsBadge").textContent=`Cited documents: ${citedDocs}`;document.getElementById("uniqueCitingBadge").textContent=`Unique citing documents: ${cb.rows.length}`;
+  document.getElementById("windowBadge").textContent=`Recency window: ${start}–${evalYear}`;document.getElementById("matchBadge").textContent=`Reference matching: ${(eventMatch.coverage*100).toFixed(1)}%`;
+  updateScoreUI(model);
+
+  const warnings=[];if(!sec.cols.cited)warnings.push("Kolom citation count tidak terdeteksi pada Secondary Documents.");
+  if(!cb.cols.year)warnings.push("Kolom Year tidak terdeteksi pada View Cited By.");if(!published)warnings.push("Isi Total artikel jurnal untuk menghitung Quantity dan citedness score.");
+  if(eventMatch.usable&&eventMatch.coverage<.80)warnings.push(`Reference matching ${(eventMatch.coverage*100).toFixed(1)}%; Recency memakai fallback unique citing documents.`);
+  if(!eventMatch.usable)warnings.push("References tidak dapat dicocokkan; Recency memakai fallback unique citing documents.");
+  document.getElementById("warningBox").innerHTML=warnings.length?`<div class="notice amber"><strong>Catatan:</strong><ul>${warnings.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></div>`:`<div class="notice green"><strong>Data terbaca baik.</strong> Semua indikator berhasil dihitung.</div>`;
+
+  const dist={};citationCounts.forEach(c=>dist[c]=(dist[c]||0)+1);document.getElementById("citationDistribution").innerHTML=Object.keys(dist).map(Number).sort((a,b)=>b-a).map(c=>`<tr><td>${c}</td><td>${dist[c]}</td><td>${c*dist[c]}</td></tr>`).join("");
+  const yd={};years.forEach(y=>yd[y]=(yd[y]||0)+1);document.getElementById("yearDistribution").innerHTML=Object.keys(yd).map(Number).sort((a,b)=>b-a).map(y=>`<tr><td>${y}</td><td>${yd[y]}</td><td>${y>=start&&y<=evalYear?"Yes":"No"}</td></tr>`).join("");
+  document.getElementById("topCited").innerHTML=[...sec.docs].sort((a,b)=>b.cited-a.cited).slice(0,20).map((d,i)=>`<tr><td>${i+1}</td><td>${esc(d.title||"(no title)")}</td><td>${d.year||""}</td><td><strong>${d.cited}</strong></td></tr>`).join("");
+}
+
+function fileRead(input,kind){
+  const f=input.files?.[0];if(!f)return;const reader=new FileReader();
+  reader.onload=()=>{try{const p=parseCSV(reader.result);if(kind==="secondary"){secondaryData=p;document.getElementById("secondaryMeta").innerHTML=`<span class="badge good">Loaded</span> ${esc(f.name)} • ${p.rows.length} rows`}else{citedByData=p;document.getElementById("citedByMeta").innerHTML=`<span class="badge good">Loaded</span> ${esc(f.name)} • ${p.rows.length} rows`}if(secondaryData&&citedByData)calculate()}catch(e){alert("CSV tidak dapat dibaca: "+e.message)}};
+  reader.readAsText(f)
+}
+document.getElementById("secondaryFile").addEventListener("change",e=>fileRead(e.target,"secondary"));document.getElementById("citedByFile").addEventListener("change",e=>fileRead(e.target,"citedby"));
+["totalPublished","evaluationYear","anchorTotal","anchorQuantity","anchorQuality","thresholdExtreme","weightTotal","weightQuantity","weightQuality","weightRecency"].forEach(id=>document.getElementById(id).addEventListener("input",()=>{if(secondaryData&&citedByData)calculate()}));
+
+function setupDrop(id,inputId,kind){const box=document.getElementById(id),inp=document.getElementById(inputId);["dragenter","dragover"].forEach(ev=>box.addEventListener(ev,e=>{e.preventDefault();box.classList.add("drag")}));["dragleave","drop"].forEach(ev=>box.addEventListener(ev,e=>{e.preventDefault();box.classList.remove("drag")}));box.addEventListener("drop",e=>{const f=e.dataTransfer.files?.[0];if(!f)return;const dt=new DataTransfer();dt.items.add(f);inp.files=dt.files;fileRead(inp,kind)})}
+setupDrop("dropSecondary","secondaryFile","secondary");setupDrop("dropCitedBy","citedByFile","citedby");
+
+function downloadSummary(){
+  if(!lastResult)return;const r=lastResult,m=r.model;
+  const rows=[["Indicator","Value","Method / note"],["Journal/source",r.detected,""],["Total published items",r.published,"User-supplied denominator"],["Cited documents",r.citedDocs,"Secondary Documents with >=1 citation"],["Unique citing documents",r.cb.rows.length,"Deduplicated View Cited By"],["Total nr. of citations",r.total,"Sum of citation counts"],["Citedness Quantity",r.quantity==null?"":r.quantity.toFixed(2)+"%","Cited docs / total published ×100"],["Citedness Quality",r.quality,"h-index"],["Citedness Recency (estimated)",r.recency==null?"":r.recency.toFixed(2)+"%",`Window ${r.start}-${r.evalYear}; ${r.basis}`],["Estimated citedness score",m?m.score.toFixed(1):"","Transparent self-assessment model"],["Estimated Citedness of journal",m?m.rating:"","Not official Scopus threshold"]];
+  const knownCited=r.sec.docs.filter(d=>d.cited>0);
+  const nextPlan=hIndexTargetPlan(knownCited,r.quality+1);
+  if(nextPlan){
+    rows.push(["Next h-index target",r.quality+1,""]);
+    rows.push(["Minimum additional citations for next h-index",nextPlan.totalExtra,"Calculated from current citation distribution"]);
+    rows.push(["Articles needing uplift for next h-index",nextPlan.uplift,""]);
+  }
+  const csv=rows.map(row=>row.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n"),blob=new Blob([csv],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="scopus_citedness_of_journal_result.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)
+}
+function resetApp(){location.reload()}
+</script>
+</body>
+</html>
